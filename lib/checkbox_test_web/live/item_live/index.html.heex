@@ -8,42 +8,45 @@
   </:actions>
 </.header>
 
+<div class="h2 mb-2 font-bold">With stream</div>
 <.table id="items" rows={@streams.items}>
-  <:col :let={{_id, item}} label="checked">
-    <%= Map.has_key?(@selected_ids, item.id) %>
+  <:col :let={{_id, {_item, checked}}} label="checked">
+    <%= inspect(checked) %>
   </:col>
-  <:col :let={{id, item}}>
-    <.input
+  <:col :let={{id, {item, checked}}}>
+    <input
+      id={"checkbox_#{id}"}
       name={"checkbox_#{id}"}
       type="checkbox"
       phx-click="toggle"
       phx-value-id={item.id}
-      value={Map.has_key?(@selected_ids, item.id)}
-      checked={Map.has_key?(@selected_ids, item.id)}
+      value={checked}
+      checked={checked}
     />
   </:col>
-  <:col :let={{_id, item}} label="ID"><%= item.id %></:col>
-  <:col :let={{_id, item}} label="Name"><%= item.name %></:col>
-  <:col :let={{_id, item}} label="Desc"><%= item.desc %></:col>
-  <:action :let={{_id, item}}>
-    <.link navigate={~p"/items/#{item}"}>View</.link>
-  </:action>
-  <:action :let={{_id, item}}>
-    <div class="sr-only">
-      <.link navigate={~p"/items/#{item}"}>Show</.link>
-    </div>
-    <.link patch={~p"/items/#{item}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, item}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: item.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
+  <:col :let={{_id, {item, _checked}}} label="ID"><%= item.id %></:col>
 </.table>
 
+<div class="h2 my-2 font-bold">With assigns</div>
+<.table id="items" rows={@items} row_id={fn {item, _checked} -> item.id end}>
+  <:col :let={{_item, checked}} label="checked">
+    <%= inspect(checked) %>
+  </:col>
+  <:col :let={{item, checked}}>
+    <input
+      id={"checkbox_#{item.id}"}
+      name={"checkbox_#{item.id}"}
+      type="checkbox"
+      phx-click="toggle"
+      phx-value-id={item.id}
+      value={checked}
+      checked={checked}
+    />
+  </:col>
+  <:col :let={{item, _checked}} label="ID"><%= item.id %></:col>
+</.table>
+
+<div class="h2 mt-2 font-bold">State</div>
 <div><%= Enum.count(@selected_ids) %> selected</div>
 <div><%= inspect(@selected_ids) %></div>
 

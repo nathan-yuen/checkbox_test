@@ -7,10 +7,14 @@ defmodule CheckboxTestWeb.ItemLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     items = Items.list_items()
+    |> Enum.map(fn item -> {item, false} end)
+
     {:ok,
-     stream(socket, :items, items)
-     |> assign(:items, items)
-     |> assign(:selected_ids, %{})}
+    stream_configure(socket, :items, dom_id: &("item-#{elem(&1, 0).id}"))
+    |> assign(:items, items)
+    |> stream(:items, items)
+    |> assign(:selected_ids, %{})
+  }
   end
 
   @impl true
@@ -50,22 +54,33 @@ defmodule CheckboxTestWeb.ItemLive.Index do
   end
 
   def handle_event("toggle", %{"id" => item_id} = params, socket) do
-    ids = if Map.has_key?(params, "value") do
+    checked = Map.has_key?(params, "value")
+    ids = if checked do
       Map.put(socket.assigns.selected_ids, item_id, true)
     else
       Map.delete(socket.assigns.selected_ids, item_id)
     end
-    |> IO.inspect(label: "ids")
+    item = Items.get_item!(item_id)
 
-    {:noreply, assign(socket, :selected_ids, ids)}
+    {:noreply,
+      assign(socket, :selected_ids, ids)
+      |> stream_insert(:items, {item, checked})
+      |> assign(:items, Enum.map(socket.assigns.items, fn {item, _checked} -> {item, Map.has_key?(ids, item.id)} end))
+    }
   end
 
   def handle_event("select-all", _params, socket) do
-    ids = Items.list_items()
+    items = Items.list_items()
+    ids = items
       |> Enum.reduce(socket.assigns.selected_ids, fn item, acc ->
-        Map.put(acc, "#{item.id}", true)
+        Map.put(acc, item.id, true)
       end)
 
-    {:noreply, assign(socket, :selected_ids, ids)}
+    {:noreply, assign(socket, :selected_ids, ids)
+      |>stream(:items, Enum.map(items, fn item ->
+        {item, true}
+      end), dom_id: &("item-#{elem(&1, 0).id}"), reset: true)
+      |> assign(:items, Enum.map(socket.assigns.items, fn {item, _checked} -> {item, true} end))
+    }
   end
 end
